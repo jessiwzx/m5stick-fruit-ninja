@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="description" content="A simple HTML5 Template" />
+        <meta name="author" content="dron" />
+        <meta
+            name="viewport"
+            content="width=device-width, height=device-height, user-scalable=no, initial-scale=1.0, maximum-scale=1.0"
+        />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="stylesheet" href="images/index.css" />
+        <title>Fruit Ninja</title>
+        <link
+            rel="icon"
+            type="image/png"
+            href="./favicon/favicon-96x96.png"
+            sizes="96x96"
+        />
+        <link rel="icon" type="image/svg+xml" href="./favicon/favicon.svg" />
+        <link rel="shortcut icon" href="./favicon/favicon.ico" />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="./favicon/apple-touch-icon.png"
+        />
+        <meta name="apple-mobile-web-app-title" content="Fruit Ninja" />
+        <link rel="manifest" href="./favicon/site.webmanifest" />
+        <!--[if lt IE 9
+            ]><script>
+                document.createElement("canvas");
+            </script><!
+        [endif]-->
+    </head>
+    <body>
+        <div id="extra"></div>
+        <div id="desc">
+            <div id="browser"></div>
+        </div>
+        <script src="scripts/all.js"></script>
+        <!-- 体感适配层：必须放在 all.js 之后（它要用 all.js 暴露的全局 require 取内部模块） -->
+        <script src="scripts/airstick.js"></script>
+        <!-- 玩法扩展层：三种模式、连击提示、倒计时与结算。同样依赖全局 require -->
+        <script src="scripts/modes.js"></script>
+    </body>
+</html>
