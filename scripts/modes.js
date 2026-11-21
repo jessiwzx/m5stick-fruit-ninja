@@ -69,6 +69,7 @@
 
   var sence = null, game = null, state = null, message = null;
   var root = null, hud = null, resultEl = null, pickEl = null;
+  var pickUnlockTimer = null;   // 面板打开期间持续释放指针锁的定时器
 
   /* ======================= 样式 ======================= */
 
@@ -119,7 +120,7 @@
     '.mz-dot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 10px currentColor;background:currentColor}',
 
     /* 模式选择 */
-    '#mz-pick{position:fixed;inset:0;z-index:9800;display:none;align-items:center;justify-content:center;',
+    '#mz-pick{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;',
     'background:radial-gradient(circle at 50% 42%,rgba(12,18,28,.9),rgba(2,4,7,.98));',
     'font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;color:#eaf2fb}',
     '#mz-pick.on{display:flex}',
@@ -128,6 +129,7 @@
     'background:linear-gradient(90deg,#7fe3a8,#6ec8ff);-webkit-background-clip:text;',
     'background-clip:text;color:transparent}',
     '#mz-pick .sub{text-align:center;font-size:12px;color:#7d8ca1;margin:0 0 22px;letter-spacing:1px}',
+    '#mz-pick .sub b{color:#8ff0b6;font-size:14px;font-weight:800}',
     '#mz-pick .row{display:flex;gap:14px}',
     '#mz-pick .card{flex:1;padding:20px 18px;border-radius:16px;cursor:pointer;text-align:left;',
     'background:linear-gradient(180deg,rgba(26,34,48,.95),rgba(14,19,28,.95));',
@@ -248,7 +250,7 @@
     pickEl.innerHTML =
       '<div class="box">' +
       '<h1>选个玩法</h1>' +
-      '<p class="sub">按 1 / 2 / 3 或者直接点</p>' +
+      '<p class="sub">点卡片，或者按 <b>1</b> / <b>2</b> / <b>3</b> 直接开始</p>' +
       '<div class="row">' + cards + '</div>' +
       '<div class="keys">切到西瓜就会进游戏 · Esc 返回菜单</div>' +
       '</div>';
@@ -276,26 +278,40 @@
   // 用 __mzPicking 告诉体感层「这是我主动解的，别弹暂停面板」
   function setPicking(v) {
     window.__mzPicking = !!v;
-    if (v) {
-      if (document.pointerLockElement) {
-        try { document.exitPointerLock(); } catch (e) { /* 忽略 */ }
-      }
+    if (v) forceUnlock();
+  }
+
+  // 指针锁没解开时，浏览器会把所有鼠标事件投递到被锁定的元素（documentElement），
+  // 模式卡片永远收不到 click —— 表现就是「面板还在，点了没反应」。
+  // 所以只要面板开着，就持续尝试释放，直到真的解开为止。
+  function forceUnlock() {
+    if (document.pointerLockElement) {
+      try { document.exitPointerLock(); } catch (e) { /* 忽略 */ }
     }
   }
 
   function showPick() {
     if (!pickEl) buildPick();
     setPicking(true);
+    forceUnlock();
+    if (!pickUnlockTimer) pickUnlockTimer = setInterval(forceUnlock, 120);
     pickEl.classList.add('on');
   }
 
   function hidePick() {
+    if (pickUnlockTimer) {
+      clearInterval(pickUnlockTimer);
+      pickUnlockTimer = null;
+    }
     if (pickEl) pickEl.classList.remove('on');
     setPicking(false);
   }
 
   function chooseMode(id) {
-    if (!MODES[id]) return;
+    if (!MODES[id]) {
+      // 点到的不是有效卡片（比如点在面板空白处），不要静默什么都不做
+      return;
+    }
     current = MODES[id];
     window.__mode = current;
     picked = true;
@@ -705,6 +721,25 @@
 
     hookSence();
     bindMessages();
+
+    // 点击兜底：指针锁还在生效时，click 会被投给 documentElement，卡片收不到。
+    // 这里在捕获阶段补一层，用坐标做命中测试，能点到就照常开局。
+    document.addEventListener(
+      'click',
+      function (e) {
+        if (!pickEl || !pickEl.classList.contains('on')) return;
+        if (e.target && pickEl.contains(e.target)) return;   // 正常路径已在面板上处理
+        var hit = null;
+        try { hit = document.elementFromPoint(e.clientX, e.clientY); } catch (err) { /* 忽略 */ }
+        var card = hit && hit.closest ? hit.closest('.card') : null;
+        if (card && pickEl.contains(card)) {
+          e.stopPropagation();
+          e.preventDefault();
+          chooseMode(card.getAttribute('data-mode'));
+        }
+      },
+      true
+    );
 
     // 场景轮询：进入 game-body 就初始化本局，回菜单就收 HUD
     var lastSence = '';
