@@ -1,0 +1,10 @@
+# 开发备份，不进仓库（本地保留，需要回退时还在）
+_backup/
+*.bak
+*.orig
+
+# 系统与编辑器杂项
+Thumbs.db
+desktop.ini
+.DS_Store
+*.log
