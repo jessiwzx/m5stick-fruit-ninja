@@ -559,7 +559,10 @@ define("scripts/main.js", function (exports) {
         log("loading....");
         log.clear();
 
-        setTimeout(sence.switchSence.saturate(sence, "home-menu"), 3000);
+        // 原版：加载完 3 秒自动回主菜单。没有取消机制，
+        // 玩家手快（3 秒内就进了对局）时这个残留任务会把对局中途踢回标题页。
+        // 存下来，modes.js 进入对局时取消它。
+        exports.__homeTimer = setTimeout(sence.switchSence.saturate(sence, "home-menu"), 3000);
     };
 
     // 点到线段的距离，用来判定是否切在水果正中（暴击）
@@ -9383,6 +9386,9 @@ define("scripts/object/lose.js", function (exports) {
 
     var number = 0;
 
+    // 禅 / 街机模式没有「命」→ 置 true，show() 直接不执行
+    var forcedHidden = false;
+
     exports.anims = [];
 
     exports.set = function () {
@@ -9419,6 +9425,7 @@ define("scripts/object/lose.js", function (exports) {
     };
 
     exports.show = function (start) {
+        if (forcedHidden) return; // 禅/街机模式：挡住 sence 里的无条件 show
         timeline.createTask({
             start: start,
             duration: animLength,
@@ -9461,6 +9468,7 @@ define("scripts/object/lose.js", function (exports) {
     };
 
     exports.showLoseAt = function (x) {
+        if (forcedHidden) return; // 没有「命」的模式不该记漏
         var infx,
             inf = [
                 [o1, conf1],
@@ -9481,12 +9489,23 @@ define("scripts/object/lose.js", function (exports) {
 
     // 禅 / 街机模式没有「命」的概念，直接把这几个图标藏掉，免得误导
     exports.setVisible = function (v) {
-        [o1, o2, o3].forEach(function (o) {
-            if (!o) return;
-            if (v) o.show();
-            else o.hide();
-        });
-        number = 0;
+        forcedHidden = !v;
+        if (!o1) return;
+        if (v) {
+            // 恢复时要把 x 摆回可见位：hide 的动画会把图标停在屏外
+            number = 0;
+            [
+                [o1, conf1],
+                [o2, conf2],
+                [o3, conf3],
+            ].forEach(function (p) {
+                p[0].attr("x", p[1].ex).attr("src", p[1].src).show();
+            });
+        } else {
+            [o1, o2, o3].forEach(function (o) {
+                o.hide();
+            });
+        }
     };
 
     exports.scaleImage = function (image) {

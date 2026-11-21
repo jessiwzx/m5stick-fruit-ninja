@@ -39,7 +39,9 @@ exports.start = function(){
 	log( "正在启动游戏..." );
     log.clear();
 
-    setTimeout( sence.switchSence.saturate( sence, "home-menu" ), 3000 );
+    // 原版：加载完 3 秒自动回主菜单。存下来，modes.js 进对局时取消它，
+    // 否则玩家 3 秒内进对局会被这个残留任务中途踢回标题页。
+    exports.__homeTimer = setTimeout( sence.switchSence.saturate( sence, "home-menu" ), 3000 );
 };
 
 message.addEventListener("slice", function( knife ){

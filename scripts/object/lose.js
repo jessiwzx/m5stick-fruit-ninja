@@ -19,6 +19,9 @@ var conf3 = { src: "images/xxx.png", sx: 697, ex: 608, y: 6, w: 31, h: 32 };
 
 var number = 0;
 
+// 禅 / 街机模式没有「命」→ 置 true，show() 与 showLoseAt() 直接跳过
+var forcedHidden = false;
+
 exports.anims = [];
 
 exports.set = function(){
@@ -35,6 +38,7 @@ exports.reset = function(){
 };
 
 exports.show = function( start ){
+    if( forcedHidden ) return;
     timeline.createTask({
 		start: start, duration: animLength, data: [ "show", conf1.sx, conf1.ex, conf2.sx, conf2.ex, conf3.sx, conf3.ex ],
 		object: this, onTimeUpdate: this.onTimeUpdate, onTimeStart: this.onTimeStart, onTimeEnd: this.onTimeEnd,
@@ -52,6 +56,8 @@ exports.hide = function( start ){
 
 exports.showLoseAt = function( x ){
 
+    if( forcedHidden ) return;
+
     var infx, inf = [
         [ o1, conf1 ],
         [ o2, conf2 ],
@@ -66,6 +72,23 @@ exports.showLoseAt = function( x ){
     
     if( number == 3 )
         message.postMessage( "game.over" );
+};
+
+// 禅 / 街机模式没有「命」的概念，直接把这几个图标藏掉，免得误导
+exports.setVisible = function( v ){
+    forcedHidden = !v;
+    if( !o1 ) return;
+
+    if( v ){
+        // 恢复时把 x 摆回可见位：hide 的动画会把图标停在屏外
+        number = 0;
+        [ [ o1, conf1 ], [ o2, conf2 ], [ o3, conf3 ] ].forEach(function( p ){
+            p[0].attr( "x", p[1].ex ).attr( "src", p[1].src ).show();
+        });
+    }
+    else {
+        [ o1, o2, o3 ].forEach(function( o ){ o.hide(); });
+    }
 };
 
 exports.scaleImage = function( image ){

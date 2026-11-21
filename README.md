@@ -93,6 +93,13 @@ python -m http.server 8124
 
 原版素材与核心玩法结构未改动。
 
+### 已修的原版缺陷
+
+| 现象 | 原因 | 修法 |
+|---|---|---|
+| 手快时选完模式立刻被弹回标题页 | `scripts/main.js` 的 `start()` 里有个「加载完 3 秒无条件 `switchSence("home-menu")`」的定时器，且没有任何取消机制，对局中途触发就把人踢走 | 定时器存进 `exports.__homeTimer`，`modes.js` 的 `chooseMode()` 里取消它 |
+| 禅 / 街机模式右上角一直挂着 3 条命 | `sence.showNewGame()` 无条件调 `lose.show()`；而 `enterGame` 里调的 `lose.setVisible` / `fps.hide` 前者签名不符、后者方法根本不存在，异常被 `catch` 吞掉 | `lose` 补真正的 `setVisible(v)`，并用 `forcedHidden` 标记挡住 `show()` / `showLoseAt()`；删掉不存在的 `fps.hide()` |
+
 ## 目录结构
 
 ```

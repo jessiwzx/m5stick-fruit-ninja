@@ -301,6 +301,16 @@
     picked = true;
     hidePick();
 
+    // 掐掉启动时那个「3 秒后无条件回主菜单」的定时器：
+    // 玩家手快在 3 秒内进对局时，它会在对局中途把画面踢回标题页
+    try {
+      var main = require('scripts/main.js');
+      if (main.__homeTimer) {
+        if (main.__homeTimer.stop) main.__homeTimer.stop();
+        main.__homeTimer = null;
+      }
+    } catch (e) { /* 拿不到就算了，不影响开局 */ }
+
     // 选完立刻把锁要回来，否则玩家得再点一次「开始体感」
     if (window.__airWasLocked) {
       try {
@@ -598,9 +608,9 @@
     modeEl.style.borderColor = m.color + '55';
 
     // 只有经典模式有命，另外两个模式把右上角的命图标收起来
+    // （fps 的导出整段被注释掉了，没有 hide 方法，不用管它）
     try {
       require('scripts/object/lose.js').setVisible(m.id === 'classic');
-      require('scripts/object/fps.js').hide();
     } catch (e2) { /* 模块可能还没初始化完，忽略 */ }
   }
 
